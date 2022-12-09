@@ -1,0 +1,64 @@
+---
+
+  - name: install Neutron
+    apt:
+      name: neutron-linuxbridge-agent
+      state: latest
+    when: ansible_distribution == "Ubuntu"
+
+  - name: edit file for neutron.conf
+    tags: neutron, ubuntu, edit
+    lineinfile:
+      path: /etc/neutron/neutron.conf
+      regexp: "transport_url = rabbit://"
+      line: "transport_url = rabbit://openstack:kimchi31@controller"
+
+  - name: line verification for neutron.conf
+    tags: neutron, ubuntu, edit
+    lineinfile:
+      path: /etc/neutron/neutron.conf
+      line: "auth_strategy = keystone"
+      state: present
+    check_mode: yes
+
+  - name: edit conf file for neutron.conf
+    tags: neutron, ubuntu, edit
+    lineinfile:
+      path: /etc/neutron/neutron.conf
+      regexp: "www_authenticate_uri = <None>"
+      line: "www_authenticate_uri = http://controller:5000"
+      state: present
+
+  - name: edit conf file for neutron.conf(1)
+    tags: neutron, ubuntu, edit
+    lineinfile:
+      path: /etc/neutron/neutron.conf
+      regexp: "memcached_servers = <None>"
+      line: "memcached_servers = controller:11211"
+      state: present
+
+  - name: edit conf file for neutron.conf(2)
+    tags: neutron, ubuntu, edit
+    lineinfile:
+      path: /etc/neutron/neutron.conf
+      regexp: "auth_type = <None>"
+      line: "auth_type = password"
+      state: present
+
+  - name: edit conf file for oslo_concurrency section
+    tags: neutron, ubuntu, edit
+    lineinfile:
+      path: /etc/neutron/neutron.conf
+      regexp: "lock_path = <None>"
+      line: "lock_path = /var/lib/neutron/tmp"
+      state: present
+
+  - name: restart compute service
+    service:
+      name: nova-compute
+      state: restarted
+
+  - name: restart Linux bridge agent
+    service:
+      name: neutron-linuxbridge-agent
+      state: restarted
